@@ -19,19 +19,15 @@ func NewValidator() (*ProxyValidator, error) {
 	return &ProxyValidator{selfIp: ip}, nil
 }
 
-func (pv *ProxyValidator) Validate(proxy *url.URL) (bool, []error) {
-	var errs []error
+func (pv *ProxyValidator) Validate(proxy *url.URL) error {
 	for i := 0; i < CheckBrokenRetries; i++ {
 		err := pv.TryValidate(proxy)
 		if err != nil {
-			errs = append(errs, err)
-			if netErr, ok := err.(net.Error); ok && netErr.Timeout() {
-				return false, errs
-			}
+			return err
 		}
 	}
 
-	return len(errs) < CheckBrokenRetries, errs
+	return nil
 }
 
 func (pv *ProxyValidator) TryValidate(proxy *url.URL) error {
