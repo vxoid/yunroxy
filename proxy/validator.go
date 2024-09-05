@@ -25,6 +25,9 @@ func (pv *ProxyValidator) Validate(proxy *url.URL) (bool, []error) {
 		err := pv.TryValidate(proxy)
 		if err != nil {
 			errs = append(errs, err)
+			if netErr, ok := err.(net.Error); ok && netErr.Timeout() {
+				return false, errs
+			}
 		}
 	}
 

@@ -6,12 +6,12 @@ import (
 	"net"
 	"net/http"
 	"net/url"
+	"time"
 )
 
 func GetIp(proxy *url.URL) (net.IP, error) {
 	link := "http://api.ipify.org"
-
-	client := http.Client{}
+	client := http.Client{Timeout: time.Second * 5}
 	if proxy != nil {
 		client.Transport = &http.Transport{Proxy: http.ProxyURL(proxy)}
 		if IsSsl(proxy) {
@@ -23,9 +23,14 @@ func GetIp(proxy *url.URL) (net.IP, error) {
 	if err != nil {
 		return nil, err
 	}
+
 	respBody, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return nil, err
+	}
+
+	if resp.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("%s: %s", resp.Status, string(respBody))
 	}
 
 	respIp := net.ParseIP(string(respBody))
