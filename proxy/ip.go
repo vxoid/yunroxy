@@ -30,7 +30,7 @@ func GetIp(proxy *url.URL) (net.IP, error) {
 	}
 
 	if resp.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("%s: %s", resp.Status, string(respBody))
+		return nil, fmt.Errorf("%s which is not OK", resp.Status)
 	}
 
 	respIp := net.ParseIP(string(respBody))
