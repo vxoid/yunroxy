@@ -1,17 +1,12 @@
 package yunroxyDB
 
-import "gorm.io/gorm"
-
-
 type Proxy struct {
-	gorm.Model
-	ID uint
-	Service string
+	ID       uint `gorm:"primarykey"`
+	Service  string
 	ProxyUrl string
 }
 
 type User struct {
-	gorm.Model
-	ID  uint
+	ID     uint `gorm:"primarykey"`
 	ApiKey string
 }
