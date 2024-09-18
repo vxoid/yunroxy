@@ -3,6 +3,7 @@ module github.com/vxoid/yunroxy/api
 go 1.19
 
 require github.com/vxoid/yunroxy/db v0.0.0
+require github.com/vxoid/yunroxy/config v0.0.0
 
 require (
 	github.com/jinzhu/inflection v1.0.0 // indirect
@@ -14,3 +15,4 @@ require (
 )
 
 replace github.com/vxoid/yunroxy/db => ../db
+replace github.com/vxoid/yunroxy/config => ../config
