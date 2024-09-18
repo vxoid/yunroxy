@@ -1,4 +1,4 @@
-package yunroxyDB
+package db
 
 type Proxy struct {
 	ID       uint `gorm:"primarykey"`

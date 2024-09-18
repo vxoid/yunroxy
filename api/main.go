@@ -5,10 +5,10 @@ import (
 	"net/http"
 	"time"
 
-	yunroxyDB "github.com/vxoid/yunroxy/yunroxyDb"
+	"github.com/vxoid/yunroxy/db"
 )
 
-var sql, Err = yunroxyDB.NewApiDb("yunroxyDB/db.db")
+var sql, Err = db.NewApiDb("yunroxyDB/db.db")
 
 type ResponseGetProxy struct {
 	ProxyURL string `json:"proxy_url"`

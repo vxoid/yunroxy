@@ -1,4 +1,4 @@
-package yunroxyDB
+package db
 
 import (
 	"math/rand"
