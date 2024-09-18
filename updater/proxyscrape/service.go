@@ -14,7 +14,7 @@ func (w *ProxyScrapeService) FetchProxies(proxy *url.URL) ([]*url.URL, error) {
 }
 
 func (w *ProxyScrapeService) GetId() string {
-	return "proxyscrape"
+	return "https://proxyscrape.com/"
 }
 
 func GetService() service.Service {

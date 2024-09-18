@@ -13,7 +13,7 @@ func (w *ProxyScrapeService) FetchProxies(proxy *url.URL) ([]*url.URL, error) {
 }
 
 func (w *ProxyScrapeService) GetId() string {
-	return "engagemint"
+	return "https://broker.engagemintcreative.com/"
 }
 
 func GetService() service.Service {
