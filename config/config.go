@@ -5,7 +5,7 @@ import (
 	"os"
 )
 
-const ConfigPath = "../config.json"
+const ConfigPath = "config.json"
 
 type Config struct {
 	Api Api    `json:"api"`
