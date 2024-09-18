@@ -1,6 +1,7 @@
 package db
 
 import (
+	"encoding/hex"
 	"math/rand"
 
 	"gorm.io/driver/sqlite"
@@ -39,7 +40,10 @@ func (slf ApiDb) DelProxy(proxyUrl string) {
 	slf.Db.Unscoped().Delete(Proxy{ProxyUrl: proxyUrl})
 }
 
-func (slf ApiDb) GetProxy() string {
+func (slf ApiDb) GetProxy(apikey string) string {
+	if !slf.IsApiKey(apikey) {
+		return "This Apikey is invalid"
+	}
 	var proxy, last Proxy
 	max := slf.Db.Last(&last)
 	res := slf.Db.Find(&proxy, randRange(1, int(last.ID)))
@@ -50,6 +54,30 @@ func (slf ApiDb) GetProxy() string {
 	return proxy.ProxyUrl
 }
 
+func (slf ApiDb) GetAllProxies() []string {
+	var proxies []string
+	var proxy Proxy
+	var len = slf.Db.Find(&proxy).RowsAffected
+	for i := 0; i < int(len); i++ {
+		proxies = append(proxies, proxy.ProxyUrl)
+	}
+	return proxies
+}
 func randRange(min, max int) int {
 	return rand.Intn(max-min+1) + min
+}
+
+func CreateApiKey() string {
+	apiKey, err := GenerateHexKey()
+	if err != nil {
+		panic(err)
+	}
+	return apiKey
+}
+func GenerateHexKey() (string, error) {
+	bytes := make([]byte, 256)
+	if _, err := rand.Read(bytes); err != nil {
+		return "", err
+	}
+	return hex.EncodeToString(bytes), nil
 }
