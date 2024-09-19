@@ -14,13 +14,19 @@ type ProxyRandomHandler struct {
 type ResponseGetProxy struct {
 	ProxyURL string `json:"proxy_url"`
 }
+type ErrorGetProxy struct {
+	Error string `json:"error"`
+}
 
 func (h *ProxyRandomHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	apiCheck := r.URL.Query().Get("api_key")
-	if !h.Db.IsApiKey(apiCheck) {
+	proxyURL, err := h.Db.GetProxy("")
+	if err != nil {
+		var resp ErrorGetProxy
+		resp.Error = err.Error()
+		json.NewEncoder(w).Encode(resp)
+		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
-	proxyURL := h.Db.GetProxy()
 	var proxy ResponseGetProxy
 	proxy.ProxyURL = proxyURL
 
