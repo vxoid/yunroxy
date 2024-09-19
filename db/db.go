@@ -2,10 +2,12 @@ package db
 
 import (
 	"encoding/hex"
+	"fmt"
 	"math/rand"
 
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
+	"gorm.io/gorm/logger"
 )
 
 type ApiDb struct {
@@ -13,7 +15,7 @@ type ApiDb struct {
 }
 
 func NewApiDb(dbPath string) (*ApiDb, error) {
-	var db, Err = gorm.Open(sqlite.Open(dbPath), &gorm.Config{})
+	var db, Err = gorm.Open(sqlite.Open(dbPath), &gorm.Config{Logger: logger.Default.LogMode(logger.Silent)})
 	if Err != nil {
 		return nil, Err
 	}
@@ -23,8 +25,7 @@ func NewApiDb(dbPath string) (*ApiDb, error) {
 
 func (slf ApiDb) IsApiKey(key string) bool {
 	var user User
-	res := slf.Db.Take(&user, "api_key = ?", key)
-	return res.Error == nil
+	return slf.Db.First(&user, "api_key = ?", key).Error == nil
 }
 
 func (slf ApiDb) AddProxy(serviceUrl string, proxyUrl string) {
@@ -40,18 +41,20 @@ func (slf ApiDb) DelProxy(proxyUrl string) {
 	slf.Db.Unscoped().Delete(Proxy{ProxyUrl: proxyUrl})
 }
 
-func (slf ApiDb) GetProxy(apikey string) string {
+func (slf ApiDb) GetProxy(apikey string) (string, error) {
 	if !slf.IsApiKey(apikey) {
-		return "This Apikey is invalid"
+		return "", fmt.Errorf("invalid api key")
 	}
 	var proxy, last Proxy
 	max := slf.Db.Last(&last)
-	res := slf.Db.Find(&proxy, randRange(1, int(last.ID)))
-
-	if res.Error != nil && max.Error != nil {
-		return ""
+	if max.Error != nil {
+		return "", max.Error
 	}
-	return proxy.ProxyUrl
+	res := slf.Db.Find(&proxy, randRange(1, int(last.ID)))
+	if res.Error != nil {
+		return "", res.Error
+	}
+	return proxy.ProxyUrl, nil
 }
 
 func (slf ApiDb) GetAllProxies() []string {
@@ -63,18 +66,12 @@ func (slf ApiDb) GetAllProxies() []string {
 	}
 	return proxies
 }
+
 func randRange(min, max int) int {
 	return rand.Intn(max-min+1) + min
 }
 
-func CreateApiKey() string {
-	apiKey, err := GenerateHexKey()
-	if err != nil {
-		panic(err)
-	}
-	return apiKey
-}
-func GenerateHexKey() (string, error) {
+func CreateApiKey() (string, error) {
 	bytes := make([]byte, 256)
 	if _, err := rand.Read(bytes); err != nil {
 		return "", err
