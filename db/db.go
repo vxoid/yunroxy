@@ -7,7 +7,6 @@ import (
 
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
-	"gorm.io/gorm/logger"
 )
 
 type ApiDb struct {
@@ -15,7 +14,7 @@ type ApiDb struct {
 }
 
 func NewApiDb(dbPath string) (*ApiDb, error) {
-	var db, Err = gorm.Open(sqlite.Open(dbPath), &gorm.Config{Logger: logger.Default.LogMode(logger.Silent)})
+	var db, Err = gorm.Open(sqlite.Open(dbPath), &gorm.Config{})
 	if Err != nil {
 		return nil, Err
 	}
