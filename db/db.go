@@ -70,10 +70,12 @@ func randRange(min, max int) int {
 	return rand.Intn(max-min+1) + min
 }
 
-func CreateApiKey() (string, error) {
+func (slf ApiDb) CreateApiKey() (string, error) {
 	bytes := make([]byte, 256)
 	if _, err := rand.Read(bytes); err != nil {
 		return "", err
 	}
-	return hex.EncodeToString(bytes), nil
+	NewKey := hex.EncodeToString(bytes)
+	slf.Db.Create(&User{ApiKey: NewKey})
+	return NewKey, nil
 }
