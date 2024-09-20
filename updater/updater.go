@@ -15,14 +15,14 @@ import (
 )
 
 const TICK = time.Minute * 15
-const UPDATER_API_KEY = "0xb37392919543d51f607e4db8114fc448054b7d93692fa91f6827e3913c9b39ab339dfe48066cb4e60d58fb2bb00e8adc61592852500f71a9dfc78b716bc73e54c06a38c6b7a7ddd79a1ab8f1ce199db33773f52cc4979f77828b2faa80716a43cacf1a11b6b0baa8781ba276110a0e80d79af421a1872df7c481bfc0cff5d17f17c3fdac2f2c5ba7a588f8ae34c8a9ae150a3b6763bfa87132a8dcb1556b2292f539c013d008372fdcfb6c0e589575166507a2adc934330f5ecdc06747cd5af4663b8402f7f5408a37f754430bb5c31bae63768528429a1c282ec78243d1c8293df677"
+const UPDATER_API_KEY = "0x52fdfc072182654f163f5f0f9a621d729566c74d10037c4d7bbb0407d1e2c64981855ad8681d0d86d1e91e00167939cb6694d2c422acd208a0072939487f6999eb9d18a44784045d87f3c67cf22746e995af5a25367951baa2ff6cd471c483f15fb90badb37c5821b6d95526a41a9504680b4e7c8b763a1b1d49d4955c8486216325253fec738dd7a9e28bf921119c160f0702448615bbda08313f6a8eb668d20bf5059875921e668a5bdf2c7fc4844592d2572bcd0668d2d6c52f5054e2d0836bf84c7174cb7476364cc3dbd968b0f7172ed85794bb358b0c3b525da1786f9fff094279db1944ebd7a19d0f7bbacbe0255aa5b7d44bec40f84c892b9bffd436"
 
 var services = []service.Service{engagemint.GetService(), proxyscrape.GetService()} // Const
 
 func tick(database *db.ApiDb, validator *proxy.ProxyValidator) {
 	log.Printf("------ New TICK ------\n")
-	removeBrokenProxies()
-	fetchNewProxies(database, validator)
+	go removeBrokenProxies(database, validator)
+	go fetchNewProxies(database, validator)
 }
 
 func fetchNewProxies(database *db.ApiDb, validator *proxy.ProxyValidator) {
@@ -64,8 +64,20 @@ func fetchNewProxies(database *db.ApiDb, validator *proxy.ProxyValidator) {
 	}
 }
 
-func removeBrokenProxies() {
+func removeBrokenProxies(database *db.ApiDb, validator *proxy.ProxyValidator) {
+	for _, proxyUrlStr := range database.GetAllProxies() {
+		proxyUrl, err := proxy.Parse(proxyUrlStr)
+		if err != nil {
+			database.DelProxy(proxyUrlStr)
+			continue
+		}
 
+		err = validator.Validate(proxyUrl)
+		if err != nil {
+			color.Yellow("removing [%s]: %s", proxyUrlStr, err)
+			database.DelProxy(proxyUrlStr)
+		}
+	}
 }
 
 func Updater(config *config.Config) {
