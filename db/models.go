@@ -8,5 +8,5 @@ type Proxy struct {
 
 type User struct {
 	ID     uint `gorm:"primarykey"`
-	ApiKey string
+	ApiKey []byte
 }

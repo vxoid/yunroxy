@@ -1,7 +1,6 @@
 package db
 
 import (
-	"encoding/hex"
 	"fmt"
 	"math/rand"
 
@@ -70,12 +69,11 @@ func randRange(min, max int) int {
 	return rand.Intn(max-min+1) + min
 }
 
-func (slf ApiDb) CreateApiKey() (string, error) {
+func (slf ApiDb) CreateApiKey() ([]byte, error) {
 	bytes := make([]byte, 256)
 	if _, err := rand.Read(bytes); err != nil {
-		return "", err
+		return nil, err
 	}
-	NewKey := hex.EncodeToString(bytes)
-	slf.Db.Create(&User{ApiKey: NewKey})
-	return NewKey, nil
+	slf.Db.Create(&User{ApiKey: bytes})
+	return bytes, nil
 }
