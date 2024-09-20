@@ -19,7 +19,8 @@ type ErrorGetProxy struct {
 }
 
 func (h *ProxyRandomHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	proxyURL, err := h.Db.GetProxy("")
+	apiCheck := r.URL.Query().Get("api_key")
+	proxyURL, err := h.Db.GetProxy(apiCheck)
 	if err != nil {
 		var resp ErrorGetProxy
 		resp.Error = err.Error()
