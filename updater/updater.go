@@ -2,7 +2,6 @@ package updater
 
 import (
 	"log"
-	"sync"
 	"time"
 
 	"github.com/fatih/color"
@@ -19,16 +18,14 @@ const UPDATER_API_KEY = "0x52fdfc072182654f163f5f0f9a621d729566c74d10037c4d7bbb0
 
 var services = []service.Service{engagemint.GetService(), proxyscrape.GetService()} // Const
 
-func tick(database *db.ApiDb, validator *proxy.ProxyValidator) {
+func tick(database *db.YunroxyDb, validator *proxy.ProxyValidator) {
 	log.Printf("------ New TICK ------\n")
 	go removeBrokenProxies(database, validator)
 	go fetchNewProxies(database, validator)
 }
 
-func fetchNewProxies(database *db.ApiDb, validator *proxy.ProxyValidator) {
-	var wg sync.WaitGroup
+func fetchNewProxies(database *db.YunroxyDb, validator *proxy.ProxyValidator) {
 	for _, s := range services {
-		wg.Add(1)
 		go func(s service.Service) {
 			newProxies, err := s.FetchProxies(nil)
 			if len(newProxies) < 1 {
@@ -55,27 +52,24 @@ func fetchNewProxies(database *db.ApiDb, validator *proxy.ProxyValidator) {
 					continue
 				}
 
-				database.AddProxy(s.GetId(), p.String())
+				database.AddProxy(s.GetId(), p)
 				color.Green("[%s]: %s succeed", s.GetId(), p)
 			}
-
-			wg.Done()
 		}(s)
 	}
 }
 
-func removeBrokenProxies(database *db.ApiDb, validator *proxy.ProxyValidator) {
-	for _, proxyUrlStr := range database.GetAllProxies() {
-		proxyUrl, err := proxy.Parse(proxyUrlStr)
+func removeBrokenProxies(database *db.YunroxyDb, validator *proxy.ProxyValidator) {
+	proxies, err := database.GetAllProxies()
+	if err != nil {
+		color.Red("couldn't fetch proxies from db.")
+		return
+	}
+	for _, proxyUrl := range proxies {
+		err := validator.Validate(proxyUrl)
 		if err != nil {
-			database.DelProxy(proxyUrlStr)
-			continue
-		}
-
-		err = validator.Validate(proxyUrl)
-		if err != nil {
-			color.Yellow("removing [%s]: %s", proxyUrlStr, err)
-			database.DelProxy(proxyUrlStr)
+			color.Yellow("removing [%s]: %s", proxyUrl.String(), err)
+			database.DeleteProxy(proxyUrl)
 		}
 	}
 }

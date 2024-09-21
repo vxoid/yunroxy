@@ -8,7 +8,7 @@ import (
 )
 
 type ProxyRandomHandler struct {
-	Db *db.ApiDb
+	Db *db.YunroxyDb
 }
 
 type ResponseGetProxy struct {
@@ -19,8 +19,8 @@ type ErrorGetProxy struct {
 }
 
 func (h *ProxyRandomHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	apiCheck := r.URL.Query().Get("api_key")
-	proxyURL, err := h.Db.GetProxy(apiCheck)
+	apiKeyHex := r.URL.Query().Get("api_key")
+	proxyURL, err := h.Db.GetRandomProxy(apiKeyHex)
 	if err != nil {
 		var resp ErrorGetProxy
 		resp.Error = err.Error()
@@ -29,7 +29,7 @@ func (h *ProxyRandomHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	var proxy ResponseGetProxy
-	proxy.ProxyURL = proxyURL
+	proxy.ProxyURL = proxyURL.String()
 
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(proxy)
