@@ -74,17 +74,7 @@ func removeBrokenProxies(database *db.YunroxyDb, validator *proxy.ProxyValidator
 	}
 }
 
-func Updater(config *config.Config) {
-	validator, err := proxy.NewValidator()
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	db, err := db.NewApiDb(config.Db)
-	if err != nil {
-		log.Fatal(err)
-	}
-
+func Updater(_ *config.Config, validator *proxy.ProxyValidator, db *db.YunroxyDb) {
 	ticker := time.NewTicker(TICK)
 	defer ticker.Stop()
 

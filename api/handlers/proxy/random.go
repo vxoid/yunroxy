@@ -5,10 +5,12 @@ import (
 	"net/http"
 
 	"github.com/vxoid/yunroxy/db"
+	"github.com/vxoid/yunroxy/proxy"
 )
 
 type ProxyRandomHandler struct {
-	Db *db.YunroxyDb
+	Db        *db.YunroxyDb
+	Validator *proxy.ProxyValidator
 }
 
 type ResponseGetProxy struct {
@@ -20,7 +22,7 @@ type ErrorGetProxy struct {
 
 func (h *ProxyRandomHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	apiKeyHex := r.URL.Query().Get("api_key")
-	proxyURL, err := h.Db.GetRandomProxy(apiKeyHex)
+	proxyURL, err := h.Db.GetRandomProxy(h.Validator, apiKeyHex)
 	if err != nil {
 		var resp ErrorGetProxy
 		resp.Error = err.Error()

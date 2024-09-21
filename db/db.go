@@ -54,23 +54,39 @@ func (slf YunroxyDb) deleteProxy(proxyUrl string) error {
 	return slf.Db.Where("proxy_url = ?", proxyUrl).Delete(&Proxy{}).Error
 }
 
-func (slf YunroxyDb) GetRandomProxy(apiKeyHex string) (*url.URL, error) {
+func (slf YunroxyDb) parseProxy(proxyAssoc Proxy) (*url.URL, error) {
+	proxyUrl, err := proxy.Parse(proxyAssoc.ProxyUrl)
+	if err != nil {
+		slf.deleteProxy(proxyAssoc.ProxyUrl)
+		return nil, err
+	}
+	return proxyUrl, nil
+}
+
+func (slf YunroxyDb) GetRandomProxy(validator *proxy.ProxyValidator, apiKeyHex string) (*url.URL, error) {
 	_, err := slf.GetUserByApiKey(apiKeyHex)
 	if err != nil {
 		return nil, err
 	}
 
-	var proxyAssoc, last Proxy
-	max := slf.Db.Last(&last)
-	if max.Error != nil {
-		return nil, max.Error
-	}
-
-	res := slf.Db.Find(&proxyAssoc, randRange(1, int(last.ID)))
+	var proxyAssoc Proxy
+	res := slf.Db.Order("RAND()").First(&proxyAssoc)
 	if res.Error != nil {
 		return nil, res.Error
 	}
-	return proxy.Parse(proxyAssoc.ProxyUrl)
+
+	proxyUrl, err := slf.parseProxy(proxyAssoc)
+	if err != nil {
+		return nil, err
+	}
+
+	err = validator.Validate(proxyUrl)
+	if err != nil {
+		slf.DeleteProxy(proxyUrl)
+		return nil, err
+	}
+
+	return proxyUrl, nil
 }
 
 func (slf YunroxyDb) GetAllProxies() ([]*url.URL, error) {
@@ -82,18 +98,14 @@ func (slf YunroxyDb) GetAllProxies() ([]*url.URL, error) {
 
 	var result []*url.URL
 	for _, proxyAssoc := range proxies {
-		proxyUrl, err := proxy.Parse(proxyAssoc.ProxyUrl)
+		proxyUrl, err := slf.parseProxy(proxyAssoc)
 		if err != nil {
-			slf.deleteProxy(proxyAssoc.ProxyUrl)
-			continue
+			return nil, err
 		}
+
 		result = append(result, proxyUrl)
 	}
 	return result, nil
-}
-
-func randRange(min, max int) int {
-	return rand.Intn(max-min+1) + min
 }
 
 func (slf YunroxyDb) CreateApiKey() ([]byte, error) {
