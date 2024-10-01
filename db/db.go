@@ -4,6 +4,7 @@ import (
 	"encoding/hex"
 	"fmt"
 	"net/url"
+	"strings"
 
 	"github.com/google/uuid"
 	"github.com/vxoid/yunroxy/proxy"
@@ -25,7 +26,7 @@ func NewApiDb(dbPath string) (*YunroxyDb, error) {
 }
 
 func (slf *YunroxyDb) GetUserByApiKey(apiKeyHex string) (*User, error) {
-	apiKey, err := hex.DecodeString(apiKeyHex)
+	apiKey, err := hex.DecodeString(strings.TrimPrefix(apiKeyHex, "0x"))
 	if err != nil {
 		return nil, err
 	}
