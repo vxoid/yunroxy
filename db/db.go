@@ -25,12 +25,7 @@ func NewApiDb(dbPath string) (*YunroxyDb, error) {
 	return &YunroxyDb{Db: db}, nil
 }
 
-func (slf *YunroxyDb) GetUserByApiKey(apiKeyHex string) (*User, error) {
-	apiKey, err := hex.DecodeString(strings.TrimPrefix(apiKeyHex, "0x"))
-	if err != nil {
-		return nil, err
-	}
-
+func (slf *YunroxyDb) GetUserByApiKey(apiKey []byte) (*User, error) {
 	var users []User
 	result := slf.Db.Limit(1).Find(&users, "api_key = ?", apiKey)
 	if result.Error != nil {
@@ -64,8 +59,8 @@ func (slf *YunroxyDb) parseProxy(proxyAssoc Proxy) (*url.URL, error) {
 	return proxyUrl, nil
 }
 
-func (slf *YunroxyDb) GetRandomProxy(validator *proxy.ProxyValidator, apiKeyHex string) (*url.URL, error) {
-	_, err := slf.GetUserByApiKey(apiKeyHex)
+func (slf *YunroxyDb) GetRandomProxy(validator *proxy.ProxyValidator, apiKey []byte) (*url.URL, error) {
+	_, err := slf.GetUserByApiKey(apiKey)
 	if err != nil {
 		return nil, err
 	}
@@ -121,4 +116,22 @@ func (slf *YunroxyDb) CreateApiKey() ([]byte, error) {
 		return nil, res.Error
 	}
 	return bytes, nil
+}
+
+func (y *YunroxyDb) RemoveApiKey(apiKey []byte) error {
+	var users []User
+	result := y.Db.Where("api_key = ?", apiKey).Find(&users)
+	if result.Error != nil {
+		return result.Error
+	}
+
+	if len(users) < 1 {
+		return fmt.Errorf("invalid api key '%s'", hex.EncodeToString(apiKey))
+	}
+
+	return y.Db.Where("api_key = ?", apiKey).Delete(&User{}).Error
+}
+
+func ParseApiKey(apiKeyHex string) ([]byte, error) {
+	return hex.DecodeString(strings.TrimPrefix(apiKeyHex, "0x"))
 }
