@@ -7,7 +7,13 @@ require (
 	gorm.io/gorm v1.25.11
 )
 
-require golang.org/x/exp v0.0.0-20240823005443-9b4947da3948 // indirect
+require (
+	github.com/goccy/go-json v0.10.3 // indirect
+	github.com/google/uuid v1.6.0 // indirect
+	github.com/segmentio/asm v1.2.0 // indirect
+	golang.org/x/exp v0.0.0-20240823005443-9b4947da3948 // indirect
+	golang.org/x/sys v0.25.0 // indirect
+)
 
 require (
 	github.com/jinzhu/inflection v1.0.0 // indirect
