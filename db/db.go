@@ -3,9 +3,9 @@ package db
 import (
 	"encoding/hex"
 	"fmt"
-	"math/rand"
 	"net/url"
 
+	"github.com/google/uuid"
 	"github.com/vxoid/yunroxy/proxy"
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
@@ -24,7 +24,7 @@ func NewApiDb(dbPath string) (*YunroxyDb, error) {
 	return &YunroxyDb{Db: db}, nil
 }
 
-func (slf YunroxyDb) GetUserByApiKey(apiKeyHex string) (*User, error) {
+func (slf *YunroxyDb) GetUserByApiKey(apiKeyHex string) (*User, error) {
 	apiKey, err := hex.DecodeString(apiKeyHex)
 	if err != nil {
 		return nil, err
@@ -42,19 +42,19 @@ func (slf YunroxyDb) GetUserByApiKey(apiKeyHex string) (*User, error) {
 	return &users[0], nil
 }
 
-func (slf YunroxyDb) AddProxy(serviceUrl string, proxyUrl *url.URL) {
+func (slf *YunroxyDb) AddProxy(serviceUrl string, proxyUrl *url.URL) {
 	slf.Db.Create(&Proxy{Service: serviceUrl, ProxyUrl: proxyUrl.String()})
 }
 
-func (slf YunroxyDb) DeleteProxy(proxyUrl *url.URL) error {
+func (slf *YunroxyDb) DeleteProxy(proxyUrl *url.URL) error {
 	return slf.deleteProxy(proxyUrl.String())
 }
 
-func (slf YunroxyDb) deleteProxy(proxyUrl string) error {
+func (slf *YunroxyDb) deleteProxy(proxyUrl string) error {
 	return slf.Db.Where("proxy_url = ?", proxyUrl).Delete(&Proxy{}).Error
 }
 
-func (slf YunroxyDb) parseProxy(proxyAssoc Proxy) (*url.URL, error) {
+func (slf *YunroxyDb) parseProxy(proxyAssoc Proxy) (*url.URL, error) {
 	proxyUrl, err := proxy.Parse(proxyAssoc.ProxyUrl)
 	if err != nil {
 		slf.deleteProxy(proxyAssoc.ProxyUrl)
@@ -63,7 +63,7 @@ func (slf YunroxyDb) parseProxy(proxyAssoc Proxy) (*url.URL, error) {
 	return proxyUrl, nil
 }
 
-func (slf YunroxyDb) GetRandomProxy(validator *proxy.ProxyValidator, apiKeyHex string) (*url.URL, error) {
+func (slf *YunroxyDb) GetRandomProxy(validator *proxy.ProxyValidator, apiKeyHex string) (*url.URL, error) {
 	_, err := slf.GetUserByApiKey(apiKeyHex)
 	if err != nil {
 		return nil, err
@@ -89,7 +89,7 @@ func (slf YunroxyDb) GetRandomProxy(validator *proxy.ProxyValidator, apiKeyHex s
 	return proxyUrl, nil
 }
 
-func (slf YunroxyDb) GetAllProxies() ([]*url.URL, error) {
+func (slf *YunroxyDb) GetAllProxies() ([]*url.URL, error) {
 	var proxies []Proxy
 	res := slf.Db.Find(&proxies)
 	if res.Error != nil {
@@ -108,10 +108,11 @@ func (slf YunroxyDb) GetAllProxies() ([]*url.URL, error) {
 	return result, nil
 }
 
-func (slf YunroxyDb) CreateApiKey() ([]byte, error) {
+func (slf *YunroxyDb) CreateApiKey() ([]byte, error) {
 	bytes := make([]byte, 256)
-	if _, err := rand.Read(bytes); err != nil {
-		return nil, err
+	for i := 0; i < 16; i++ {
+		UUID := uuid.New()
+		copy(bytes[i*16:], UUID[:])
 	}
 
 	res := slf.Db.Create(&User{ApiKey: bytes})
