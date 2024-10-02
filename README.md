@@ -17,6 +17,7 @@ Clone this [repository](https://github.com/vxoid/yunroxy)
 Download [Go Compiler](https://go.dev/doc/install) (1.19<=)
 
 Build the project by running `go build -o yunroxy .`
+
 Build the CLI Tools by running `cd cli && go build -o ../yunroxy-cli .`
 
 ## Usage
