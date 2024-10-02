@@ -17,6 +17,7 @@ Clone this [repository](https://github.com/vxoid/yunroxy)
 Download [Go Compiler](https://go.dev/doc/install) (1.19<=)
 
 Build the project by running `go build -o yunroxy .`
+Build the CLI Tools by running `cd cli && go build -o ../yunroxy-cli .`
 
 ## Usage
 # Create API Key
@@ -24,5 +25,8 @@ Build the project by running `go build -o yunroxy .`
 After running the program, it will run api on http://0.0.0.0:11555 by default
 `./yunroxy`
 # API
+Create an API Key using the Yunroxy CLI tool
+`yunroxy-cli api-key new`
+
 Simply make a GET request to the following endpoint
 `http://0.0.0.0:11555/proxy/random&api_key=<API-KEY>`, is the only endpoint available for now.
