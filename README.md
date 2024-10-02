@@ -20,11 +20,13 @@ Build the project by running `go build -o yunroxy .`
 Build the CLI Tools by running `cd cli && go build -o ../yunroxy-cli .`
 
 ## Usage
-# Create API Key
-# Run
+### Create API Key
+Running this command will create a new api key.
+`yunroxy-cli api-key new` 
+### Run
 After running the program, it will run api on http://0.0.0.0:11555 by default
 `./yunroxy`
-# API
+### API
 Create an API Key using the Yunroxy CLI tool
 `yunroxy-cli api-key new`
 
