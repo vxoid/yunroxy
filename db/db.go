@@ -4,9 +4,11 @@ import (
 	"encoding/hex"
 	"fmt"
 	"log"
+	"math/rand"
 	"net/url"
 	"path/filepath"
 	"strings"
+	"time"
 
 	"github.com/google/uuid"
 	"github.com/vxoid/yunroxy/config"
@@ -112,10 +114,20 @@ func (slf *YunroxyDb) GetRandomProxy(validator *proxy.ProxyValidator, apiKey []b
 		return nil, err
 	}
 
+	var count int64
+	slf.Db.Model(&Proxy{}).Count(&count)
+
+	if count < 1 {
+		return nil, fmt.Errorf("no proxies available (empty db)")
+	}
+
+	rand.Seed(time.Now().UnixNano())
+	randomOffset := rand.Intn(int(count))
+
 	var proxyAssoc Proxy
-	res := slf.Db.Order("RAND()").First(&proxyAssoc)
-	if res.Error != nil {
-		return nil, res.Error
+
+	if err := slf.Db.Offset(randomOffset).Limit(1).Find(&proxyAssoc).Error; err != nil {
+		return nil, err
 	}
 
 	proxyUrl, err := slf.parseProxy(proxyAssoc)
