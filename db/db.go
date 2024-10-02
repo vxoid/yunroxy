@@ -3,6 +3,7 @@ package db
 import (
 	"encoding/hex"
 	"fmt"
+	"log"
 	"net/url"
 	"path/filepath"
 	"strings"
@@ -30,6 +31,15 @@ func NewApiDb(dbPath string) (*YunroxyDb, error) {
 	}
 
 	db.AutoMigrate(&User{}, &Proxy{})
+	db.Exec("PRAGMA journal_mode=WAL;")
+	db.Exec("PRAGMA locking_mode = NORMAL;")
+	sqlDB, err := db.DB()
+	if err != nil {
+		return nil, err
+	}
+
+	sqlDB.SetMaxOpenConns(1)
+	sqlDB.SetMaxIdleConns(1)
 	return &YunroxyDb{Db: db}, nil
 }
 
@@ -46,8 +56,16 @@ func (slf *YunroxyDb) GetUserByApiKey(apiKey []byte) (*User, error) {
 	return &users[0], nil
 }
 
-func (slf *YunroxyDb) AddProxy(serviceUrl string, proxyUrl *url.URL) {
-	slf.Db.Create(&Proxy{Service: serviceUrl, ProxyUrl: proxyUrl.String()})
+func (slf *YunroxyDb) AddProxy(serviceUrl string, proxyUrl *url.URL) error {
+	tx := slf.Db.Begin()
+
+	if err := tx.Create(&Proxy{Service: serviceUrl, ProxyUrl: proxyUrl.String()}).Error; err != nil {
+		tx.Rollback()
+		return err
+	}
+
+	tx.Commit()
+	return nil
 }
 
 func (slf *YunroxyDb) DeleteProxy(proxyUrl *url.URL) error {
@@ -55,7 +73,16 @@ func (slf *YunroxyDb) DeleteProxy(proxyUrl *url.URL) error {
 }
 
 func (slf *YunroxyDb) deleteProxy(proxyUrl string) error {
-	return slf.Db.Where("proxy_url = ?", proxyUrl).Delete(&Proxy{}).Error
+	tx := slf.Db.Begin()
+
+	err := tx.Exec("DELETE FROM proxies WHERE proxy_url = ?", proxyUrl).Error
+	if err != nil {
+		tx.Rollback()
+		return err
+	}
+
+	tx.Commit()
+	return nil
 }
 
 func (slf *YunroxyDb) parseProxy(proxyAssoc Proxy) (*url.URL, error) {
@@ -65,6 +92,18 @@ func (slf *YunroxyDb) parseProxy(proxyAssoc Proxy) (*url.URL, error) {
 		return nil, err
 	}
 	return proxyUrl, nil
+}
+
+func (y *YunroxyDb) Validate(validator *proxy.ProxyValidator, proxy *url.URL) error {
+	err := validator.Validate(proxy)
+	if err != nil {
+		delErr := y.DeleteProxy(proxy)
+		if delErr != nil {
+			log.Printf("Cannot delete %s from the db: %s", proxy, delErr)
+		}
+	}
+
+	return err
 }
 
 func (slf *YunroxyDb) GetRandomProxy(validator *proxy.ProxyValidator, apiKey []byte) (*url.URL, error) {
@@ -84,10 +123,9 @@ func (slf *YunroxyDb) GetRandomProxy(validator *proxy.ProxyValidator, apiKey []b
 		return nil, err
 	}
 
-	err = validator.Validate(proxyUrl)
+	err = slf.Validate(validator, proxyUrl)
 	if err != nil {
-		slf.DeleteProxy(proxyUrl)
-		return nil, err
+		return slf.GetRandomProxy(validator, apiKey)
 	}
 
 	return proxyUrl, nil

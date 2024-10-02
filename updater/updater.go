@@ -2,6 +2,7 @@ package updater
 
 import (
 	"log"
+	"net/url"
 	"time"
 
 	"github.com/fatih/color"
@@ -46,14 +47,21 @@ func fetchNewProxies(database *db.YunroxyDb, validator *proxy.ProxyValidator) {
 			}
 
 			for _, p := range newProxies {
-				err := validator.Validate(p)
-				if err != nil {
-					color.Yellow("[%s]: %s -> %s", s.GetId(), p, err)
-					continue
-				}
+				go func(p *url.URL) {
+					err := database.Validate(validator, p)
+					if err != nil {
+						// color.Yellow("[%s]: %s -> %s", s.GetId(), p, err)
+						return
+					}
 
-				database.AddProxy(s.GetId(), p)
-				color.Green("[%s]: %s succeed", s.GetId(), p)
+					err = database.AddProxy(s.GetId(), p)
+					if err != nil {
+						color.Yellow("[%s]: Cannot add %s to the db: %s", s.GetId(), p, err)
+						return
+					}
+
+					color.Green("[%s]: %s succeed", s.GetId(), p)
+				}(p)
 			}
 		}(s)
 	}
@@ -66,11 +74,7 @@ func removeBrokenProxies(database *db.YunroxyDb, validator *proxy.ProxyValidator
 		return
 	}
 	for _, proxyUrl := range proxies {
-		err := validator.Validate(proxyUrl)
-		if err != nil {
-			color.Yellow("removing [%s]: %s", proxyUrl.String(), err)
-			database.DeleteProxy(proxyUrl)
-		}
+		go database.Validate(validator, proxyUrl)
 	}
 }
 
