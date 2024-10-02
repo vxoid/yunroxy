@@ -3,5 +3,5 @@
     "host": "0.0.0.0",
     "port": 11555
   },
-  "db": "data/service.db"
+  "db": "./data/service.db"
 }

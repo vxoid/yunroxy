@@ -4,9 +4,11 @@ import (
 	"encoding/hex"
 	"fmt"
 	"net/url"
+	"path/filepath"
 	"strings"
 
 	"github.com/google/uuid"
+	"github.com/vxoid/yunroxy/config"
 	"github.com/vxoid/yunroxy/proxy"
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
@@ -17,10 +19,16 @@ type YunroxyDb struct {
 }
 
 func NewApiDb(dbPath string) (*YunroxyDb, error) {
-	var db, Err = gorm.Open(sqlite.Open(dbPath), &gorm.Config{})
+	projectDir, err := config.GetProjectDir()
+	if err != nil {
+		return nil, err
+	}
+
+	var db, Err = gorm.Open(sqlite.Open(filepath.Join(projectDir, dbPath)), &gorm.Config{})
 	if Err != nil {
 		return nil, Err
 	}
+
 	db.AutoMigrate(&User{}, &Proxy{})
 	return &YunroxyDb{Db: db}, nil
 }

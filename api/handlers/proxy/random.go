@@ -2,6 +2,7 @@ package proxy
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
 
 	"github.com/vxoid/yunroxy/db"
@@ -22,7 +23,16 @@ type ErrorGetProxy struct {
 
 func (h *ProxyRandomHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	apiKeyHex := r.URL.Query().Get("api_key")
-	proxyURL, err := h.Db.GetRandomProxy(h.Validator, apiKeyHex)
+	apiKey, err := db.ParseApiKey(apiKeyHex)
+	if err != nil {
+		var resp ErrorGetProxy
+		resp.Error = fmt.Sprintf("Please pass valid api_key to complete authentication.")
+		json.NewEncoder(w).Encode(resp)
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+
+	proxyURL, err := h.Db.GetRandomProxy(h.Validator, apiKey)
 	if err != nil {
 		var resp ErrorGetProxy
 		resp.Error = err.Error()

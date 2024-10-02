@@ -20,7 +20,9 @@ require (
 	github.com/jinzhu/now v1.1.5 // indirect
 	github.com/mattn/go-sqlite3 v1.14.23 // indirect
 	github.com/vxoid/yunroxy/proxy v0.0.0
+	github.com/vxoid/yunroxy/config v0.0.0
 	golang.org/x/text v0.18.0 // indirect
 )
 
 replace github.com/vxoid/yunroxy/proxy => ../proxy
+replace github.com/vxoid/yunroxy/config => ../config
